@@ -51,10 +51,10 @@ init flags =
             Line (Full 8) (Full 16) (Full 32) (Full 32)
 
         line3 =
-            Line (Full 256) (Full 128) (Full 128) (Full 64)
+            Line (Full 256) (Full 128) (Full 128) (Full 512)
 
         line4 =
-            Line (Full 512) (Full 512) (Full 1024) (Full 2048)
+            Line (Full 1024) (Full 512) (Full 1024) (Full 2048)
     in
         ( { board = Board line1 line2 line3 line4 }, Cmd.none )
 
