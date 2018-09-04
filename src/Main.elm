@@ -25,7 +25,7 @@ type alias Flags =
 
 
 type alias Model =
-    { line : Line }
+    { board : Board }
 
 
 type Element
@@ -48,15 +48,15 @@ init flags =
             Line (Full 4) (Full 4) (Full 2) (Full 2)
 
         line2 =
-            Line (Full 4) (Full 4) (Full 2) (Full 2)
+            Line (Full 8) (Full 16) (Full 32) (Full 32)
 
         line3 =
-            Line (Full 4) (Full 4) (Full 2) (Full 2)
+            Line (Full 256) (Full 128) (Full 128) (Full 64)
 
         line4 =
-            Line (Full 4) (Full 4) (Full 2) (Full 2)
+            Line (Full 512) (Full 512) (Full 1024) (Full 2048)
     in
-        ( { line = line1 }, Cmd.none )
+        ( { board = Board line1 line2 line3 line4 }, Cmd.none )
 
 
 
@@ -72,10 +72,30 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CombineRight ->
-            ( { model | line = transformLineRight model.line }, Cmd.none )
+            let
+                lines =
+                    boardToList model.board
+
+                newLines =
+                    List.map transformLineRight lines
+
+                newBoard =
+                    listToBoard newLines
+            in
+                ( { model | board = newBoard }, Cmd.none )
 
         CombineLeft ->
-            ( { model | line = transformLineLeft model.line }, Cmd.none )
+            let
+                lines =
+                    boardToList model.board
+
+                newLines =
+                    List.map transformLineLeft lines
+
+                newBoard =
+                    listToBoard newLines
+            in
+                ( { model | board = newBoard }, Cmd.none )
 
 
 
@@ -84,17 +104,45 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ button [ onClick CombineLeft ] [ text "Combine Left" ]
-        , button [ onClick CombineRight ] [ text "Combine Right" ]
-        , table [ style "border" "1px solid black" ]
-            [ tr []
+    let
+        lines =
+            boardToList model.board
+    in
+        div
+            [ style "margin-left" "100px"
+            , style "margin-top" "100px"
+            ]
+            [ button
+                [ style "width" "100px"
+                , style "height" "50px"
+                , style "font-size" "20px"
+                , onClick CombineLeft
+                ]
+                [ text "Left" ]
+            , button
+                [ style "width" "100px"
+                , style "height" "50px"
+                , style "font-size" "20px"
+                , onClick CombineRight
+                ]
+                [ text "Right" ]
+            , table
+                [ style "margin-top" "20px"
+                , style "border" "1px solid black"
+                ]
                 (List.map
-                    (\element -> viewElement element)
-                    (model.line |> lineToList)
+                    viewRow
+                    lines
                 )
             ]
-        ]
+
+
+viewRow line =
+    tr []
+        (List.map
+            (\element -> viewElement element)
+            (line |> lineToList)
+        )
 
 
 viewElement : Element -> Html Msg
@@ -117,12 +165,12 @@ viewElement element =
                     color n
     in
         td
-            [ style "width" "50px"
-            , style "height" "50px"
-            , style "font-size" "24pt"
+            [ style "width" "150px"
+            , style "height" "150px"
+            , style "font-size" "36pt"
             , style "border" "1px solid black"
-            , style "align" "center"
             , style "background-color" cellColor
+            , align "center"
             ]
             [ (text
                 value
@@ -270,16 +318,55 @@ color : Int -> String
 color num =
     case num of
         2 ->
-            "blue"
+            "#F1EA7F"
 
         4 ->
-            "green"
+            "#BE9EC9"
 
         8 ->
-            "pink"
+            "#D5AE41"
+
+        16 ->
+            "#EAE6DA"
+
+        32 ->
+            "#D1B894"
+
+        64 ->
+            "#ECDB54"
+
+        128 ->
+            "#DBB1CD"
+
+        256 ->
+            "#EC9787"
+
+        512 ->
+            "#BFD641"
+
+        1024 ->
+            "#C48F65"
+
+        2048 ->
+            "#9C9A40"
 
         _ ->
             "white"
+
+
+boardToList : Board -> List Line
+boardToList (Board line1 line2 line3 line4) =
+    [ line1, line2, line3, line4 ]
+
+
+listToBoard : List Line -> Board
+listToBoard lines =
+    case lines of
+        [ line1, line2, line3, line4 ] ->
+            Board line1 line2 line3 line4
+
+        _ ->
+            Debug.todo "Bad board list"
 
 
 
