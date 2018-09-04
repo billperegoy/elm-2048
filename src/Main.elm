@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 
 
 main : Program Flags Model Msg
@@ -23,35 +24,39 @@ type alias Flags =
 -- Model
 
 
+type alias Model =
+    { line : Line }
+
+
 type Element
     = Empty
     | Full Int
+
+
+type Board
+    = Board Line Line Line Line
 
 
 type Line
     = Line Element Element Element Element
 
 
-type Model
-    = Board Line Line Line Line
-
-
 init : Flags -> ( Model, Cmd Msg )
 init flags =
     let
-        row_1 =
-            Line Empty Empty Empty Empty
+        line1 =
+            Line (Full 4) (Full 4) (Full 2) (Full 2)
 
-        row_2 =
-            Line (Full 2) Empty Empty Empty
+        line2 =
+            Line (Full 4) (Full 4) (Full 2) (Full 2)
 
-        row_3 =
-            Line Empty (Full 2) (Full 2) Empty
+        line3 =
+            Line (Full 4) (Full 4) (Full 2) (Full 2)
 
-        row_4 =
+        line4 =
             Line (Full 4) (Full 4) (Full 2) (Full 2)
     in
-        ( Board row_1 row_2 row_3 row_4, Cmd.none )
+        ( { line = line1 }, Cmd.none )
 
 
 
@@ -59,14 +64,18 @@ init flags =
 
 
 type Msg
-    = NoOp
+    = CombineLeft
+    | CombineRight
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
+        CombineRight ->
+            ( { model | line = transformLineRight model.line }, Cmd.none )
+
+        CombineLeft ->
+            ( { model | line = transformLineLeft model.line }, Cmd.none )
 
 
 
@@ -75,7 +84,50 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-    h1 [] [ text "Hello" ]
+    div []
+        [ button [ onClick CombineLeft ] [ text "Combine Left" ]
+        , button [ onClick CombineRight ] [ text "Combine Right" ]
+        , table [ style "border" "1px solid black" ]
+            [ tr []
+                (List.map
+                    (\element -> viewElement element)
+                    (model.line |> lineToList)
+                )
+            ]
+        ]
+
+
+viewElement : Element -> Html Msg
+viewElement element =
+    let
+        value =
+            case element of
+                Empty ->
+                    ""
+
+                Full n ->
+                    String.fromInt n
+
+        cellColor =
+            case element of
+                Empty ->
+                    "white"
+
+                Full n ->
+                    color n
+    in
+        td
+            [ style "width" "50px"
+            , style "height" "50px"
+            , style "font-size" "24pt"
+            , style "border" "1px solid black"
+            , style "align" "center"
+            , style "background-color" cellColor
+            ]
+            [ (text
+                value
+              )
+            ]
 
 
 lineToList : Line -> List Element
@@ -93,14 +145,39 @@ listToLine elems =
             Debug.todo "Received list with other than 4 elements"
 
 
-boardToList : Model -> List Line
-boardToList (Board line_1 line_2 line_3 line_4) =
-    [ line_1, line_2, line_3, line_4 ]
+transformLineRight : Line -> Line
+transformLineRight line =
+    line
+        |> shiftLineRight
+        |> combineLineRight
 
 
-transformLine : Line -> Line
-transformLine line =
-    shiftLineRight line
+transformLineLeft : Line -> Line
+transformLineLeft line =
+    line
+        |> shiftLineLeft
+        |> combineLineLeft
+
+
+shiftLineLeft : Line -> Line
+shiftLineLeft line =
+    line
+        |> lineReverse
+        |> shiftLineRight
+        |> lineReverse
+
+
+lineReverse : Line -> Line
+lineReverse (Line elem1 elem2 elem3 elem4) =
+    Line elem4 elem3 elem2 elem1
+
+
+combineLineLeft : Line -> Line
+combineLineLeft line =
+    line
+        |> lineReverse
+        |> combineLineRight
+        |> lineReverse
 
 
 shiftLineRight : Line -> Line
@@ -187,6 +264,22 @@ combineLineRight element =
 
         _ ->
             element
+
+
+color : Int -> String
+color num =
+    case num of
+        2 ->
+            "blue"
+
+        4 ->
+            "green"
+
+        8 ->
+            "pink"
+
+        _ ->
+            "white"
 
 
 
